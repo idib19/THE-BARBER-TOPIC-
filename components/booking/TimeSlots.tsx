@@ -58,9 +58,13 @@ export default function TimeSlots({
             selected={date}
             onSelect={(newDate) => newDate && setDate(newDate)}
             className="rounded-md border"
-            disabled={(date) =>
-              date < new Date() || date > new Date().setMonth(new Date().getMonth() + 2)
-            }
+            disabled={(date) => {
+              const today = new Date();
+              const twoMonthsFromNow = new Date();
+              twoMonthsFromNow.setMonth(today.getMonth() + 2);
+              
+              return date < today || date > twoMonthsFromNow;
+            }}
           />
         </div>
 
