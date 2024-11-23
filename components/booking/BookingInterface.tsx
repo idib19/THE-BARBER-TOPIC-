@@ -1,18 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Scissors, Gift, Star, CalendarRange } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import ServiceSelection from "./ServiceSelection";
 import TimeSlots from "./TimeSlots";
 import CustomerForm from "./CustomerForm";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, CalendarRange, Users, Gift, Star } from "lucide-react";
-import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
 import BookingSummary from "./BookingSummary";
 import ReferralProgram from "./ReferralProgram";
-import { Progress } from "@/components/ui/progress";
 
 // Points tier configuration
 const POINTS_TIERS = [
@@ -38,6 +37,17 @@ export type CustomerInfo = {
 
 type Mode = "select" | "book" | "refer";
 
+// Mock customer data
+const customer = {
+  id: "1",
+  name: "John Doe",
+  email: "john.doe@example.com",
+  phone: "+1 (555) 123-4567",
+  points: 1500,
+  tier: "Silver",
+  avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100"
+};
+
 export default function BookingInterface() {
   const [mode, setMode] = useState<Mode>("select");
   const [date, setDate] = useState<Date>(new Date());
@@ -46,16 +56,14 @@ export default function BookingInterface() {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [step, setStep] = useState(1);
 
-  // Mock current points (this would come from your backend)
-  const currentPoints = 1500;
-  const nextTier = POINTS_TIERS.find(tier => tier.points > currentPoints) || POINTS_TIERS[POINTS_TIERS.length - 1];
-  const currentTier = POINTS_TIERS.find(tier => tier.points > currentPoints) 
-    ? POINTS_TIERS[POINTS_TIERS.findIndex(tier => tier.points > currentPoints) - 1]
+  const nextTier = POINTS_TIERS.find(tier => tier.points > customer.points) || POINTS_TIERS[POINTS_TIERS.length - 1];
+  const currentTier = POINTS_TIERS.find(tier => tier.points > customer.points) 
+    ? POINTS_TIERS[POINTS_TIERS.findIndex(tier => tier.points > customer.points) - 1]
     : POINTS_TIERS[POINTS_TIERS.length - 1];
   
   const progressToNextTier = currentTier === POINTS_TIERS[POINTS_TIERS.length - 1]
     ? 100
-    : ((currentPoints - (currentTier?.points || 0)) / (nextTier.points - (currentTier?.points || 0))) * 100;
+    : ((customer.points - (currentTier?.points || 0)) / (nextTier.points - (currentTier?.points || 0))) * 100;
 
   const handleCustomerSubmit = (info: CustomerInfo) => {
     setCustomerInfo(info);
@@ -76,165 +84,135 @@ export default function BookingInterface() {
   const handleBack = () => {
     if (mode !== "select") {
       setMode("select");
-      setStep(1);
-      setSelectedService(null);
-      setSelectedTime(null);
-      setCustomerInfo(null);
       return;
     }
-
-    if (step > 1) {
-      setStep(step - 1);
-      if (step === 4) {
-        setSelectedTime(null);
-      } else if (step === 3) {
-        setSelectedService(null);
-      } else if (step === 2) {
-        setCustomerInfo(null);
-      }
-    }
+    if (step > 1) setStep(step - 1);
   };
 
   const renderModeSelection = () => (
-    <div className="grid gap-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold">Welcome to BarberBook</h1>
-        <p className="text-muted-foreground">Choose what you'd like to do today</p>
-      </div>
-
-      <Card className="p-4 border-2 border-primary/20">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-primary" />
-            <div>
-              <p className="font-medium">{currentTier.name} Member</p>
-              <p className="text-sm text-muted-foreground">
-                {nextTier === currentTier 
-                  ? "You've reached the highest tier!" 
-                  : `${nextTier.points - currentPoints} points until ${nextTier.name}`}
-              </p>
+    <div className="container mx-auto space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-4">
+          <Avatar className="w-20 h-20">
+            <AvatarImage src={customer.avatar} alt={customer.name} />
+            <AvatarFallback>{customer.name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
+          </Avatar>
+          <div>
+            <CardTitle className="text-2xl">{customer.name}</CardTitle>
+            <CardDescription>{customer.email}</CardDescription>
+            <CardDescription>{customer.phone}</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-lg font-semibold">Loyalty Points</p>
+                <p className="text-3xl font-bold">{customer.points}</p>
+              </div>
+              <Badge variant="secondary" className="text-lg py-1">
+                {currentTier.name} Member
+              </Badge>
             </div>
+            <Progress value={progressToNextTier} className="h-2" />
+            <p className="text-sm text-muted-foreground text-center">
+              {nextTier === currentTier 
+                ? "You've reached the highest tier!" 
+                : `${nextTier.points - customer.points} points until ${nextTier.name}`}
+            </p>
           </div>
-          <div className="text-right">
-            <p className="text-xl font-bold">{currentPoints}</p>
-            <p className="text-sm text-muted-foreground">Points</p>
-          </div>
-        </div>
-        <Progress value={progressToNextTier} className="h-2" />
+        </CardContent>
       </Card>
 
-      <div className="grid gap-4">
-        <Button
-          variant="outline"
-          size="lg"
-          className="h-auto py-6 px-6"
-          onClick={() => setMode("book")}
-        >
-          <div className="flex flex-col items-center gap-2 text-left">
-            <div className="flex items-center gap-2">
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <CalendarRange className="h-5 w-5" />
-              <span className="font-semibold">Book an Appointment</span>
-            </div>
-            <span className="text-sm text-muted-foreground">
-              Schedule your next haircut or service
-            </span>
-          </div>
-        </Button>
+              Book Appointment
+            </CardTitle>
+            <CardDescription>Schedule your next haircut or service</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button size="lg" onClick={() => setMode("book")} className="w-full">
+              <Scissors className="mr-2 h-4 w-4" /> Book Now
+            </Button>
+          </CardContent>
+        </Card>
 
-        <Button
-          variant="outline"
-          size="lg"
-          className="h-auto py-6 px-6"
-          onClick={() => setMode("refer")}
-        >
-          <div className="flex flex-col items-center gap-2 text-left">
-            <div className="flex items-center gap-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <Gift className="h-5 w-5" />
-              <span className="font-semibold">Refer & Earn Points</span>
-            </div>
-            <span className="text-sm text-muted-foreground">
-              Invite friends and earn rewards
-            </span>
-          </div>
-        </Button>
+              Refer & Earn
+            </CardTitle>
+            <CardDescription>Invite friends and earn rewards</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button size="lg" variant="outline" onClick={() => setMode("refer")} className="w-full">
+              <Star className="mr-2 h-4 w-4" /> Start Referring
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {(mode !== "select" || step > 1) && (
-              <Button variant="ghost" size="icon" onClick={handleBack}>
-                <ArrowLeft className="h-5 w-5" />
+      <div className="max-w-3xl mx-auto">
+        {mode === "select" && renderModeSelection()}
+
+        {mode === "book" && (
+          <Card>
+            <CardHeader>
+              <Button variant="ghost" size="icon" onClick={handleBack} className="mb-4">
+                <Scissors className="h-5 w-5" />
               </Button>
-            )}
-            <Link href="/" className="text-2xl font-bold hover:opacity-80">
-              {mode === "book" ? "Book Appointment" : mode === "refer" ? "Referral Program" : "BarberBook"}
-            </Link>
-          </div>
-          <Badge variant="secondary" className="gap-1">
-            <Clock className="h-4 w-4" />
-            {format(new Date(), "EEEE, MMMM d")}
-          </Badge>
-        </div>
-
-        <Card className="p-6">
-          {mode === "select" && renderModeSelection()}
-
-          {mode === "book" && (
-            <div className="space-y-6">
-              {/* Progress Steps */}
-              <div className="flex justify-between items-center mb-8">
-                {[1, 2, 3, 4].map((stepNumber) => (
-                  <div key={stepNumber} className="flex items-center">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        step >= stepNumber
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {stepNumber}
-                    </div>
-                    {stepNumber < 4 && (
-                      <div
-                        className={`h-1 w-16 mx-2 ${
-                          step > stepNumber ? "bg-primary" : "bg-muted"
-                        }`}
-                      />
-                    )}
-                  </div>
-                ))}
+              <CardTitle>Book Appointment</CardTitle>
+              <CardDescription>Complete your booking in a few steps</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {step === 1 && <CustomerForm onSubmit={handleCustomerSubmit} />}
+                {step === 2 && customerInfo && (
+                  <ServiceSelection onSelect={handleServiceSelect} />
+                )}
+                {step === 3 && selectedService && customerInfo && (
+                  <TimeSlots
+                    date={date}
+                    serviceDuration={selectedService.duration}
+                    selectedTime={selectedTime}
+                    onTimeSelect={handleTimeSelect}
+                  />
+                )}
+                {step === 4 && selectedService && selectedTime && customerInfo && (
+                  <BookingSummary
+                    service={selectedService}
+                    date={date}
+                    time={selectedTime}
+                    customerInfo={customerInfo}
+                  />
+                )}
               </div>
+            </CardContent>
+          </Card>
+        )}
 
-              {step === 1 && <CustomerForm onSubmit={handleCustomerSubmit} />}
-              {step === 2 && customerInfo && (
-                <ServiceSelection onSelect={handleServiceSelect} />
-              )}
-              {step === 3 && selectedService && customerInfo && (
-                <TimeSlots
-                  date={date}
-                  serviceDuration={selectedService.duration}
-                  selectedTime={selectedTime}
-                  onTimeSelect={handleTimeSelect}
-                />
-              )}
-              {step === 4 && selectedService && selectedTime && customerInfo && (
-                <BookingSummary
-                  service={selectedService}
-                  date={date}
-                  time={selectedTime}
-                  customerInfo={customerInfo}
-                />
-              )}
-            </div>
-          )}
-
-          {mode === "refer" && <ReferralProgram />}
-        </Card>
+        {mode === "refer" && (
+          <Card>
+            <CardHeader>
+              <Button variant="ghost" size="icon" onClick={handleBack} className="mb-4">
+                <Gift className="h-5 w-5" />
+              </Button>
+              <CardTitle>Referral Program</CardTitle>
+              <CardDescription>Invite friends and earn rewards</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ReferralProgram />
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

@@ -24,7 +24,7 @@ import {
 import { Avatar } from "@/components/ui/avatar";
 
 export default function BarberDashboard() {
-  const [view, setView] = useState<"daily" | "weekly">("weekly");
+  const [view, setView] = useState<"daily" | "weekly">("daily");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   const handleBookingSelect = (booking: Booking) => {
